@@ -1,0 +1,3 @@
+persist.adb.notify=0
+persist.mtp.notify=0
+persist.usb.notify=0

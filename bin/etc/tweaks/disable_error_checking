@@ -1,0 +1,10 @@
+ro.kernel.checkjni=0
+ro.kernel.android.checkjni=0
+profiler.force_disable_err_rpt=1
+profiler.force_disable_ulog=1
+debugtool.anrhistory=0
+profiler.launch=false
+profiler.debugmonitor=false
+profiler.hung.dumpdobugreport=false
+persist.service.pcsync.enable=0
+persist.service.lgospd.enable=0

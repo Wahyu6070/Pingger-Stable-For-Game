@@ -1,0 +1,4 @@
+ro.hwui.text_small_cache_width=2048
+ro.hwui.text_small_cache_height=4096
+persist.sys.scrollingcache=4
+touch.pressure.scale=0

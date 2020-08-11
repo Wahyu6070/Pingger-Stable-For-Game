@@ -1,0 +1,546 @@
+#!/system/bin/sh
+#Pingger Stable Control
+#by wahyu6070 @xda-developers
+#since 08-07-2019
+#License GPL3+
+
+pinggerversion=V7.5
+pinggerdate=28-07-2020
+
+# Colors
+GREEN='\e[01;32m'
+RED='\e[01;31m'
+BRED='\033[0;41m'
+YELLOW='\e[01;33m'
+BLUE='\e[01;34m'
+VIOLET='\e[01;35m'
+BLACK='\e[01;30m'
+CYAN='\e[01;36m'
+WHITE='\e[01;37m'
+BGBL='\e[1;30;47m'
+NC='\033[0m'
+N='\e[0m'
+
+
+base=/data/media/0/pingger
+log=$base/pingger.log
+data=$base/data
+
+#▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+#Functions
+#▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+print() { echo "$1"; }
+getp(){ echo $1 "$2" | head -n1 | cut -d = -f 2; }
+getp1(){ echo $1 | head -n1 | cut -d : -f 2; }
+del(){ rm -rf "$@" ; }
+cdir(){ mkdir -p "$@" ; }
+error() {
+	print
+	print "${RED}ERROR :  ${WHITE}$1${GREEN}"
+	print
+	}
+printmid() {
+  local CHAR=$(printf "$@" | sed 's|\\e[[0-9;]*m||g' | wc -m)
+  local hfCOLUMN=$((COLUMNS/2))
+  local hfCHAR=$((CHAR/2))
+  local indent=$((hfCOLUMN-hfCHAR))
+  echo "$(printf '%*s' "${indent}" '') $@"
+}
+loadings() {
+  PID=$!
+  a=0;
+  while [ -d /proc/$PID ]; do
+    b=$((+1))
+    a=$((a+1))
+    sleep 0.9s
+    printf "\r${@} [${a}Second]"
+  done
+}
+
+
+#▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+#▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+gappslist="
+com.android.vending
+com.google.android.gms
+"
+
+syslist="
+org.lineageos.snap
+"
+
+termlist="com.termux|com.termoneplus"
+
+gamelist="com.mobile.legends"
+
+#▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+#▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+
+boost(){
+print "- Boost...";
+sleep 2
+print " ";
+for z in $(pm list packages -3) $gappslist $syslist; do
+boost6071=`getp1 $z`
+   case $boost6071 in
+     com.termux|com.termoneplus)
+            print "- Skipping Terminal"
+            	;;
+              *)
+             print "- Boost : $boost6071"
+             am force-stop $boost6071 2>/dev/null
+				;;
+	esac
+done
+print "- Done ";
+}
+
+device(){
+	print
+	PRODUCT=$(getprop ro.product.vendor.device)
+    ROM=$(getprop ro.build.display.id | cut -d'-' -f1)
+	print "Name ROM = $ROM ($PRODUCT) " |  tee -a $log;
+	AV=$(getprop ro.build.version.release)
+	print "Android Version = $AV " |  tee -a $log;
+	print "Baterai Status = $(cat /sys/class/power_supply/battery/status)"
+	print "Baterai = $(cat /sys/class/power_supply/battery/capacity)%"
+	print "Baterai Technology = $(cat /sys/class/power_supply/battery/technology)"
+	print "Baterai Health = $(cat /sys/class/power_supply/battery/health)"
+	ARM=$(getprop ro.product.cpu.abi)
+	print "Architecture = $ARM" |  tee -a $log;
+	selinux=$(getenforce)
+	print "Selinux = $selinux " |  tee -a $log;
+	print "Kernel = $(uname -r)" |  tee -a $log;
+	print "Chipset = $(getprop ro.product.board) " |  tee -a $log;
+	print "GPU = $(cat /sys/kernel/gpu/gpu_model)"
+	for i in /system/xbin/busybox /sbin/busybox /system/bin/busybox
+	do
+	[ -f $i ] && print "Busybox = Installed" || print "Busybox = Not found"
+	 break 
+    done
+    [ -f /data/adb/magisk/magisk ] && print "Magisk = Installed" || print "magisk = Not found"
+    [ "$(getprop persist.vendor.camera.HAL3.enabled)" -eq 1 ] && print "Camera2api = Enable" || print "Camera2api = disable"
+    [ "$(grep f2fs /vendor/etc/fstab.qcom)" ] && print "F2FS : This ROM supports F2FS" || print "F2FS : This ROM not supports F2FS"
+    [ "$(cat /sys/kernel/touchpanel/dclicknode)" -eq 1 ] && print "DT2W : Enable" || print "DT2W : Disable"
+    }
+	
+gaming1(){
+	while true; do
+	clear
+	printmid "${BRED}Gaming Mode 1${NC}$WHITE"
+	print " ";
+		for z in $(pm list packages -3) $gappslist $syslist; do
+			boost6071=`getp1 $z`
+  			 case $boost6071 in
+  				   com.termux|com.termoneplus|com.mixplore)
+           				 print "- ${RED}Skipping Terminal --> ${WHITE}$boost6071${WHITE}"
+           				 ;;
+            		 ${gamelist})
+            		 		print "- ${RED}Skipping Game --> ${WHITE}$boost6071"
+            		 		;;
+            		 		*)
+            				 print "- Force stop --> $boost6071 ${GREEN}successfully${WHITE}"
+             				am force-stop $boost6071 2>/dev/null
+							;;
+				esac
+ 		 done
+ 	print "- ${GREEN}Done${WHITE}"
+     sleep 60s & loadings "- Loading ..."
+ 	done		
+}
+gaming2(){
+	if [ -f $data/gaming_mode_2 ]; then
+	clear
+	print
+	print "- Disabling Gaming Mode 2"
+	sleep 2s
+	printmid "${BRED}Gaming Mode 1${NC}$WHITE"
+	print " ";
+		for z in $(pm list packages -3) $gappslist $syslist; do
+			boost6071=`getp1 $z`
+  			 case $boost6071 in
+  				   com.termux|com.termoneplus|com.mixplore)
+           				 print "- ${RED}Skipping Terminal --> ${WHITE}$boost6071${WHITE}"
+           				 ;;
+            		 ${gamelist})
+            		 		print "- ${RED}Skipping Game --> ${WHITE}$boost6071"
+            		 		;;
+            		 		*)
+            				 print "- Force stop --> $boost6071 ${GREEN}successfully${WHITE}"
+             				am force-stop $boost6071 2>/dev/null
+							;;
+				esac
+ 		 done
+ 	print "- ${GREEN}Done${WHITE}"
+     sleep 60s & loadings "- Loading ..."
+ 	done		
+	rm -rf $data/gaming_mode_2
+	print " -Done"
+	sleep 2s
+	else
+	clear
+	print 
+	print "               Gaming Mode 2"
+	print 
+	print "- Enabling Gaming Mode 2"
+	sleep 2s
+	pingger_app_list pm disable gaming2 2>/dev/null
+	print "activated" > $data/gaming_mode_2
+	print "- Done"
+	sleep 2s
+	fi
+	}
+gaming3(){
+	status_gaming3=$data/gaming_mode_3
+	list_gaming3=$data/gaming_mode_3_list
+	[ ! -f $list_gaming3 ] && error "$list_gaming3 Not found list app" && sleep 7s && return 0;
+	if [ -f $status_gaming3 ]; then
+	clear
+	print
+	print "- Disabling Gaming Mode 2"
+	sleep 2s
+	rm -rf $status_gaming3
+	print " -Done"
+	sleep 2s
+	while read gaming3_list;
+	do
+	pm enable $gaming3_list
+	done < $list_gaming3
+	else
+	clear
+	print 
+	print "               Gaming Mode 3"
+	print 
+	print "- Enabling Gaming Mode 3"
+	sleep 2s
+	while read gaming3_list;
+	do
+	pm disable $gaming3_list
+	done < $list_gaming3
+	print "activated" > $status_gaming3
+	print "- Done"
+	sleep 2s
+	fi
+	}
+	
+gaming(){
+	while true; do
+	clear
+	[ -f $data/gaming_mode_2 ] && gaming22="Disable Gaming Mode 2" || gaming22="Gaming Mode 2 (aggresive)"
+	[ -f $data/gaming_mode_3 ] && gaming23="Disable Gaming Mode 3" || gaming23="Gaming Mode 3"
+	print "$YELLOW                  Gaming Mode Select $GREEN"
+	print
+	print "1.Gaming Mode 1"
+	print "2.$gaming22"
+	print "3.$gaming23"
+	print "4.Exit"
+	print
+	echo -n "Select Gaming Mode : "
+	read gamemodeselect
+	print
+	case $gamemodeselect in
+	1) gaming1 ;;
+	2) gaming2 ;;
+	3) gaming3 ;;
+	4) break ;;
+	*) error "Invalid selection"; sleep 2s ;;
+	esac
+	done
+	}
+battery(){
+	if [ ! -f $data/battery_saver ]; then
+	print "            Enabling Baterry saver"
+		for z in $(pm list packages -3) $gappslist $syslist; do
+		boost6071=`getp1 $z`
+   		case $boost6071 in
+    			 com.termux|com.termoneplus)
+            	 print "- Skipping Terminal"
+            		;;
+             	 *)
+            		 print "- Force stop : $boost6071"
+            		 am force-stop $boost6071 2>/dev/null
+				;;
+			esac
+		done
+		pm disable com.google.android.gms/com.google.android.gms.mdm.receivers.MdmDeviceAdminReceiver
+		print "actived" > $data/battery_saver
+		print "- Done ";
+	elif [ -f $data/battery_saver ]; then
+		print "               Disable Battery saver"
+		pm enable com.google.android.gms/com.google.android.gms.mdm.receivers.MdmDeviceAdminReceiver
+		del $data/battery_saver
+		print "- Done"
+	fi
+}
+
+addon(){
+	while true; do
+	clear
+	print "$BLUE                     Add-on $GREEN"
+	print
+	print "1. Fake Battery Set"
+	print "2. Led Calerful"
+	print "3. Disable Led"
+	print "4. Set brightness"
+	print "5. Boot Unpacker"
+	print "6. Set all permissions apk installed"
+	print "7. exit"
+	print " "
+	echo -n "Select Menu : "
+	read addons
+	case $addons in
+	1)
+		print
+		echo -n "Fake Batttery Number : "
+		read fake
+		echo $fake > /sys/class/power_supply/battery/capacity 
+	;;
+	2)
+		print
+		print "    LED Scale"
+		print
+		print "1 Very Fast"
+		print "2 Fast"
+		print "3 medium"
+		print "4 slow"
+		print "5 Very slow"
+		print
+		echo -n "Selete LED scale : "
+		read scale
+		case $scale in
+			1) ledscale=" " ;;
+			2) ledscale="sleep 1s" ;;
+			3) ledscale="sleep 2s" ;;
+			4) ledscale="sleep 4s" ;;
+			5) ledscale="sleep 5s" ;;
+		  *)
+			print
+			print "select not found, set medium scale"
+			ledscale="sleep 2s"
+			sleep 2s
+			;; 
+			
+		esac
+		while true; do
+			print 0 > /sys/class/leds/red/brightness
+			cat /sys/class/leds/red/max_brightness > /sys/class/leds/red/brightness
+			$ledscale
+			print 0 > /sys/class/leds/red/brightness
+			cat /sys/class/leds/green/max_brightness > /sys/class/leds/green/brightness
+			$ledscale
+			echo 0 > /sys/class/leds/green/brightness
+		done
+	;;
+	3)
+		print
+		print "- Disabling Leds"
+		echo 0 > /sys/class/leds/red/brightness
+		echo 0 > /sys/class/leds/green/brightness
+		print "- Done"
+		sleep 2s
+	;;
+	4)
+		bigmax=$(cat /sys/class/leds/wled/max_brightness)
+		print
+		echo -n "- Set brightness 0 - $bigmax : "
+		read bigset
+		if [ $bigset -eq $bigset ]; then
+			echo "$bigset" > /sys/class/leds/wled/brightness
+			print "- Set $brightness"
+			sleep 2s
+		else
+			print
+			print "- $bigset Is Not number"
+			sleep 2s
+		fi
+	;;
+	5)
+		if [ -f $base/boot.img ]; then
+			block=$base/boot.img
+		elif [ ! -z $(find /dev/block -type l -iname boot | head -n 1) ]; then
+			block=$(find /dev/block -type l -iname boot | head -n 1)
+		elif [ ! -z /dev/block/by-name/boot ]; then
+			block=/dev/block/by-name/boot
+		else
+			print
+			echo -n "- Set Manual Boot image : "
+			read setboot
+			block=$setboot
+		fi
+	
+		if [ magiskboot ] && [ ! -z $block ]; then
+			print
+			print "       Boot image Unpacker"
+			print
+			print "- Block  : $block"
+			print "- Output : $base/boot/<here>"
+			print " "
+			sleep 2s
+			del $base/boot
+			cdir $base/boot
+			cd $base/boot
+			print "- Unpack boot image"
+			sleep 1s
+			cat $block > $base/boot/old-boot.img
+			magiskboot unpack -h $block 2>/dev/null
+			print "- Repack boot image"
+			magiskboot repack $block 2>/dev/null
+			cd /
+			sleep 1s
+			print "- Unpackimg Done"sleep 3s
+		else
+			print
+			print "- Magiskboot or Boot.img Not found"
+			sleep 2s
+		fi
+	;;
+	6)
+		for b in $(pm list packages -3); do
+			package=`getp1 $b`
+			print "- Set permissions : $package"
+			pm grant $package android.permission.READ_CALENDAR 2>/dev/null
+			pm grant $package android.permission.READ_CALL_LOG  2>/dev/null
+			pm grant $package android.permission.ACCESS_FINE_LOCATION 2>/dev/null
+			pm grant $package android.permission.READ_EXTERNAL_STORAGE 2>/dev/null
+			pm grant $package android.permission.ACCESS_COARSE_LOCATION 2>/dev/null
+			pm grant $package android.permission.READ_PHONE_STATE 2>/dev/null
+			pm grant $package android.permission.SEND_SMS 2>/dev/null
+			pm grant $package android.permission.CALL_PHONE 2>/dev/null
+			pm grant $package android.permission.WRITE_CONTACTS 2>/dev/null
+			pm grant $package android.permission.CAMERA 2>/dev/null
+			pm grant $package android.permission.WRITE_CALL_LOG 2>/dev/null
+			pm grant $package android.permission.PROCESS_OUTGOING_CALLS 2>/dev/null
+			pm grant $package android.permission.GET_ACCOUNTS 2>/dev/null
+			pm grant $package android.permission.WRITE_EXTERNAL_STORAGE 2>/dev/null
+			pm grant $package android.permission.RECORD_AUDIO 2>/dev/null
+			pm grant $package android.permission.ACCESS_MEDIA_LOCATION 2>/dev/null
+			pm grant $package android.permission.READ_CONTACTS 2>/dev/null
+		done
+		print "- Done"
+		sleep 5s
+	;;
+	7) break ;;
+	*)
+		error "Invalid selection"; sleep 2s ;;
+	esac
+	done
+	}
+
+
+ccg(){
+	if [ -d /data/data/com.mobile.legends ]; then
+	print "- Cleaning Mobile Legend Cache"
+	del /data/data/com.mobile.legends/cache
+	del /data/media/0/Android/data/com.mobile.legends/cache
+	fi
+	if [ -d /data/data/com.tencent.ig ]; then
+	print "- Cleaning PUBG Mobile Cache"
+	del /data/data/com.tencent.ig/cache
+	del /data/media/0/Android/data/com.tencent.ig/cache
+	fi
+	}
+
+testping(){
+	ping -w 10s google.com
+	}
+	
+meminfo(){
+	print "RAM Free = $(free -h | grep Mem | tr -s ' ' | cut -d' ' -f4)"
+	print "RAM Used = $(free -h | grep Mem | tr -s ' ' | cut -d' ' -f3)"
+	print "RAM Total = $(free -h | grep Mem | tr -s ' ' | cut -d' ' -f2)"
+	print
+	print "/data Free  = $(df -h /data | tail -n 1 | tr -s ' ' | cut -d' ' -f4)"
+	print "/data Used  = $(df -h /data | tail -n 1 | tr -s ' ' | cut -d' ' -f3)"
+	print "/data Total = $(df -h /data | tail -n 1 | tr -s ' ' | cut -d' ' -f2)"
+	print
+	print "/system Free  = $(df -h /system | tail -n 1 | tr -s ' ' | cut -d' ' -f4)"
+	print "/system Used  = $(df -h /system | tail -n 1 | tr -s ' ' | cut -d' ' -f3)"
+	print "/system Total = $(df -h /system | tail -n 1 | tr -s ' ' | cut -d' ' -f2)"
+	print
+	print "/vendor Free  = $(df -h /vendor | tail -n 1 | tr -s ' ' | cut -d' ' -f4)"
+	print "/vendor Used  = $(df -h /vendor | tail -n 1 | tr -s ' ' | cut -d' ' -f3)"
+	print "/vendor Total = $(df -h /vendor | tail -n 1 | tr -s ' ' | cut -d' ' -f2)"
+	}
+about(){
+print "$CYAN "
+print "Pingger Stable Control $pinggerversion ($pinggerdate)"
+print "Copyright (C) 2020 wahyu kurniawan (wahyu6070)."
+print "License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>."
+print "This is free software: you are free to change and redistribute it."
+print "There is NO WARRANTY, to the extent permitted by law."
+print "${YELLOW}"
+print " Github  : https://github.com/wahyu6070 "
+print " Youtube : https://www.youtube.com/c/wahyu6070 "
+print " Xda     : @wahyu6070 "
+print " Telegram: https://t.me/wahyu6070group"
+print " $GREEN"
+}
+
+menu(){
+	while true; do
+	clear
+	print "$BLUE                    $2 $GREEN"
+	print
+	$1
+	print
+	print "${CYAN}1.Back To Menu      ${GREEN}2.Refresh"
+	print
+	echo -n "${WHITE}Select menu : ${NC}$GREEN"
+	read anjay
+	if [ $anjay -eq 1 ]; then
+	break
+	elif [ $anjay -eq 2 ]; then print;
+	else
+	print
+	error "Please select 1 or 2"
+	print
+	sleep 2s
+	fi
+	done
+}
+
+#
+#Root
+id=`id`; id=`echo ${id#*=}`; id=`echo ${id%%\(*}`; id=`echo ${id%% *}`
+if [ "$id" != "0" ] && [ "$id" != "root" ]; then
+print " "
+error "Root Accest Not Found $WHITE"
+print " "
+exit
+fi
+
+#▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+test ! -d $base && cdir $base
+test ! -d $data && cdir $data
+#▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+while true; do
+clear
+test -f $data/battery_saver && batterystatus="${RED}Disable Battery... ${NC}${GREEN}" || batterystatus="Battery Saver      "
+print " "
+print "     ${YELLOW}Pingger ${GREEN}Stable ${WHITE}Control $GREEN"
+print " "
+print "1.Boost              6.Memory Info"
+print "${YELLOW}2.Gaming Mode${GREEN}        7.Device Info"
+print "3.${batterystatus}8.Add on"
+print "4.Check Ping         9.About"
+print "5.CCG                10.Exit"
+print
+echo -n "Choose one of the numbers : "
+read pilih
+case $pilih in
+1) menu boost Boost ;;
+2) gaming ;;
+3) menu battery "Battery Saver" ;;
+4) menu testping "Tes Ping" ;;
+5) menu ccg "Cleaning Cache Game" ;;
+6) menu meminfo "Memory Info" ;;
+7) menu device "Device info" ;;
+8) addon ;;
+9 | about) menu about About ;;
+10 | exit)  
+print " $WHITE "
+break 
+;;
+*) error "Invalid selection" ; sleep 2s ;;
+esac
+done

@@ -1,0 +1,39 @@
+pinggerdocversion=75
+
+                          English
+pingger Control
+ 1. boost: How it works Forcing running applications so that ram is relieved and pinged is stable
+ 2. Gaming Mode
+     Gaming Mode 1: How it works it forces stop applications that run every 30 seconds
+     Gaming Mode 2: How it works Disables applications that use an internet connection so that the internet connection is focused on the game
+     -Mode Gaming 3: How it works is almost the same as gaming mode 2, the difference you can add to the list of applications that are disabled on /sdcard/pingger/data/gaming_mode_3_list
+    
+ 3. Battery saver: To save battery
+ 4. Test ping: To test ping
+ 5. Clean Cache Game (CCG): To clear the game cache
+ 6. Memory Info: For memory information
+ 7. Device info: device information
+ 8. Addon
+      -
+ 9. About: Help
+ 10. Exit: Exit the terminal
+
+
+
+                           Bahasa Indonesia
+Pingger Control
+1. boost : Cara Kerjanya memaksa aplikasi yang berjalan agar ram lega dan ping stabil
+2. Mode Gaming
+    -Mode Gaming 1 : Cara kerjanya ini memaksa berhenti aplikasi yang berjalan setiap 30 detik
+    -Mode Gaming 2 : Cara Kerjanya menonaktifkan aplikasi yang mengggunakan koneksi internet agar koneksi internetnya fokus ke game
+    -Mode Gaming 3 : Cara Kerjanya hampir sama dengan mode gaming 2,bedanya kalian bisa menambahakan daftar aplikasi yang di nonaktifkan di /sdcard/pingger/data//gaming_mode_3_list
+    
+3. Battery saver : Untuk menghemat baterai
+4. Test ping : Untuk mengetes ping
+5. Clean Cache Game (CCG) : Untuk membersihkan cache game
+6. Memory Info : Untuk Informasi memori
+7. Device info : informasi perangkat
+8. Addon
+     -
+9. About : Bantuan
+10. Exit : Keluar terminal
