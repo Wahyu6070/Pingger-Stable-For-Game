@@ -15,8 +15,7 @@ log=$pingger/Pingger.log
 prop=$MODPATH/system.prop
 rm -rf $log
 serviced=/data/adb/service.d/pingger.sh
-unset system
-system=/sbin/.magisk/mirror/system
+test -f /system_root/system/build.prop && system=/system_roor/system || system=/system
 unset vendor
 vendor=/sbin/.magisk/mirror/vendor
 upinfo (){ grep_prop $1 $tmp/module.prop; }
