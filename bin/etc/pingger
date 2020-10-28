@@ -5,7 +5,7 @@
 #License GPL3+
 
 propversion=V7.6
-propdate=29-08-2020
+propdate=29-10-2020
 
 # Colors
 GREEN='\e[01;32m'
@@ -73,7 +73,6 @@ code.name.monkey.retromusic
 blacklist_term="
 com.termux
 com.termoneplus
-jackpal.androidterm
 "
 blacklist_system="
 com.google.android.inputmethod.latin
@@ -106,29 +105,6 @@ black_func(){
 #▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
 #▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
 
-menu(){
-	while true; do
-	clear
-	print "$BLUE                    $2 $GREEN"
-	print
-	$1
-	print
-	print "${CYAN}1.Back To Menu      ${GREEN}2.Refresh"
-	print
-	echo -n "${WHITE}Select menu : ${NC}$GREEN"
-	read anjay
-	if [ $anjay -eq 1 ]; then
-	break
-	elif [ $anjay -eq 2 ]; then print;
-	else
-	print
-	error "Please select 1 or 2"
-	print
-	sleep 2s
-	fi
-	done
-}
-
 boost(){
 print "- Boost...";
 print " ";
@@ -153,10 +129,10 @@ device(){
 	print "Name ROM = $ROM ($(getprop ro.product.vendor.device)) "
 	print "Android Version = $(getprop ro.build.version.release)" |  tee -a $log;
 	print "Android Security patch = $(getprop ro.build.version.security_patch)"
-	print "Baterai Status = $(cat /sys/class/power_supply/battery/status)"
-	print "Baterai = $(cat /sys/class/power_supply/battery/capacity)%"
-	print "Baterai Technology = $(cat /sys/class/power_supply/battery/technology)"
-	print "Baterai Health = $(cat /sys/class/power_supply/battery/health)"
+	print "battery Status = $(cat /sys/class/power_supply/battery/status)"
+	print "battery = $(cat /sys/class/power_supply/battery/capacity)%"
+	print "battery Technology = $(cat /sys/class/power_supply/battery/technology)"
+	print "battery Health = $(cat /sys/class/power_supply/battery/health)"
 	ARM=$(getprop ro.product.cpu.abi)
 	print "Architecture = $ARM" |  tee -a $log;
 	selinux=$(getenforce)
@@ -256,21 +232,6 @@ gaming3(){
 	
 	}
 	
-#
-about_game(){
-	print "1.Gaming Mode 1"
-	print "${YELLOW}the way this mode works is to force quit the app every 60 seconds to give the signal more focus to the game.${GREEN}"
-	print
-	print "2.Gaming mode 2"
-	print "${YELLOW}This mode is more aggressive because it will disable all installed applications, except games, so that the internet connection focuses on the game.${GREEN}"
-	print
-	print "4.Gaming Mode 3"
-	print "${YELLOW}This mode is almost the same as <gaming mode 2>, which distinguishes you from adding a list of applications that you disable. $GREEN"
-	print "${VIOLET}You can add the application package name in <${data}/gaming_mode_3> ${GREEN}"
-	print
-	
-	}
-	
 gaming(){
 	while true; do
 	clear
@@ -281,8 +242,7 @@ gaming(){
 	print "1.Gaming Mode 1"
 	print "$gaming22"
 	print "$gaming23"
-	print "4.About"
-	print "5.Exit"
+	print "4.Exit"
 	print
 	echo -n "Select Gaming Mode : "
 	read gamemodeselect
@@ -291,8 +251,7 @@ gaming(){
 	1) gaming1 ;;
 	2) gaming2 ;;
 	3) gaming3 ;;
-	4) menu about_game "About Gaming Mode" ;;
-	5) break ;;
+	4) break ;;
 	*) error "Invalid selection"; sleep 2s ;;
 	esac
 	done
@@ -331,7 +290,8 @@ addon(){
 	print "4. Set brightness"
 	print "5. Boot Unpacker"
 	print "6. Set all permissions apk installed"
-	print "7. exit"
+	print "7. Check List Apps"
+	print "8. exit"
 	print " "
 	echo -n "Select Menu : "
 	read addons
@@ -466,7 +426,50 @@ addon(){
 		print "- Done"
 		sleep 5s
 	;;
-	7) break ;;
+	7)
+	clear
+	printmid "Select list all"
+	print
+	print "1.List apps installed"
+	print "2.List system and apps"
+	print "3.Exit"
+	print
+	echo -n "Select Menu : "
+	read appps
+	case $appps in
+		1)
+		clear
+		printmid "- Creating list apps installed"
+		print
+		del $base/list_apps_installed
+		for capps in $(pm list packages -3); do
+		print "••> $(getp1 $capps)"
+		print "$(getp1 $capps)" >> $base/list_apps_installed
+		done
+		print
+		print "${WHITE}- Check in •> $base/list_apps_installed $GREEN"
+		print "- done"
+		sleep 8s
+		print
+		;;
+		2)
+		clear
+		printmid "- Creating list system and apps"
+		print
+		del $base/list_system_apps
+		for capps in $(pm list packages); do
+		print "••> $(getp1 $capps)"
+		print "$(getp1 $capps)" >> $base/list_system_apps
+		done
+		print
+		print "${WHITE}- Check in •> $base/$base/list_system_apps $GREEN"
+		print "- done"
+		print
+		sleep 8s
+		;;
+	esac
+	;;
+	8) break ;;
 	*)
 		error "Invalid selection"; sleep 2s ;;
 	esac
@@ -539,7 +542,28 @@ print " Telegram: https://t.me/wahyu6070group"
 print " $GREEN"
 }
 
-
+menu(){
+	while true; do
+	clear
+	print "$BLUE                    $2 $GREEN"
+	print
+	$1
+	print
+	print "${CYAN}1.Back To Menu      ${GREEN}2.Refresh"
+	print
+	echo -n "${WHITE}Select menu : ${NC}$GREEN"
+	read anjay
+	if [ $anjay -eq 1 ]; then
+	break
+	elif [ $anjay -eq 2 ]; then print;
+	else
+	print
+	error "Please select 1 or 2"
+	print
+	sleep 2s
+	fi
+	done
+}
 
 #
 #Root
